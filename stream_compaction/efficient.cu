@@ -54,7 +54,6 @@ namespace StreamCompaction {
          */
         void scan(int n, int *odata, const int *idata) {
 
-
             int* d_data;
             
             int paddedN = 1 << ilog2ceil(n);
@@ -63,20 +62,20 @@ namespace StreamCompaction {
             cudaMalloc((void**)&d_data, paddedN * sizeof(int));
             cudaMemcpy(d_data, idata, paddedN * sizeof(int), cudaMemcpyHostToDevice);
 
-            timer().startGpuTimer();
             // TODO
 			int blockSize = 64;
 			int numBlocks = (paddedN + blockSize - 1) / blockSize;
 
+            timer().startGpuTimer();
 
             for (int d = 0; d < logceilN; ++d) {
-                int threadsNeeded = n / (1 << (d + 1));
-                if (threadsNeeded == 0) break;  // No more work to do
+                //int threadsNeeded = n / (1 << (d + 1));
+                //if (threadsNeeded == 0) break;  // No more work to do
 
-                int numBlocksLevel = (threadsNeeded + blockSize - 1) / blockSize;
+                //int numBlocksLevel = (threadsNeeded + blockSize - 1) / blockSize;
 
 
-                kernUpSweepEfficientScan << <numBlocksLevel, threadsNeeded >> > (n, d, d_data);
+                kernUpSweepEfficientScan << <numBlocks, blockSize >> > (n, d, d_data);
                 cudaDeviceSynchronize();           
             }
 
@@ -84,18 +83,20 @@ namespace StreamCompaction {
             cudaMemcpy(d_data + paddedN - 1, &setNMinusOne_ToZero, sizeof(int), cudaMemcpyHostToDevice);
 
             for (int d = logceilN - 1; d > -1; --d) {
-                int threadsNeeded = (paddedN)/ (1 << (d + 1));
-                if (threadsNeeded == 0) break;
+                //int threadsNeeded = (paddedN)/ (1 << (d + 1));
+                //if (threadsNeeded == 0) break;
 
-                int numBlocksLevel = (threadsNeeded + blockSize - 1) / blockSize;
+                //int numBlocksLevel = (threadsNeeded + blockSize - 1) / blockSize;
 
-                kernDownSweepEfficientScan << <numBlocksLevel, threadsNeeded >> > (paddedN, d, d_data);
+                kernDownSweepEfficientScan << <numBlocks, blockSize >> > (paddedN, d, d_data);
                 cudaDeviceSynchronize();
 			}
 
             timer().endGpuTimer();
 
             cudaMemcpy(odata, d_data, paddedN * sizeof(int), cudaMemcpyDeviceToHost);
+
+
 			cudaFree(d_data);
 
   
@@ -111,10 +112,71 @@ namespace StreamCompaction {
          * @returns      The number of elements remaining after compaction.
          */
         int compact(int n, int *odata, const int *idata) {
-            timer().startGpuTimer();
             // TODO
-            timer().endGpuTimer();
-            return -1;
+
+            int *count;
+            int *d_bools;
+			int *d_indices;
+			int *d_idata;
+			int* d_odata;
+
+
+            int paddedN = 1 << ilog2ceil(n);
+
+            cudaMalloc((void**)&d_bools, paddedN * sizeof(int));
+            cudaMalloc((void**)&d_indices, paddedN * sizeof(int));
+            cudaMalloc((void**)&d_idata, paddedN * sizeof(int));
+			cudaMalloc((void**)&d_odata, paddedN * sizeof(int));
+
+            cudaMemcpy(d_idata, idata, paddedN * sizeof(int), cudaMemcpyHostToDevice);
+
+            // map to bools
+            int blockSize = 64;
+            int numBlocks = (paddedN + blockSize - 1) / blockSize;
+
+            //timer().startGpuTimer();
+
+            StreamCompaction::Common::kernMapToBoolean << <numBlocks, blockSize >> > (paddedN, d_bools, d_idata);
+            cudaDeviceSynchronize();
+
+			int* tmp_bools = new int[paddedN];
+			cudaMemcpy(tmp_bools, d_bools, paddedN * sizeof(int), cudaMemcpyDeviceToHost);
+
+
+            int* tmp_indices = new int[paddedN];
+            // scan bools into indices
+            scan(paddedN, tmp_indices, tmp_bools);
+			cudaDeviceSynchronize();
+
+
+			// copy indices to device for scatter kernel
+            cudaMemcpy(d_indices, tmp_indices, paddedN * sizeof(int), cudaMemcpyHostToDevice);
+
+
+			// scatter
+            StreamCompaction::Common::kernScatter << <numBlocks, blockSize >> > (paddedN, d_odata, d_idata, d_bools, d_indices);
+			cudaDeviceSynchronize();
+
+
+            int returnVal = 0;
+            for (int i = 0; i < n; i++) {
+				tmp_bools[i] == 1 ? returnVal++ : returnVal += 0;
+            }
+
+            //timer().endGpuTimer();
+
+            cudaMemcpy(odata, d_odata, paddedN * sizeof(int), cudaMemcpyDeviceToHost);
+
+			delete[] tmp_bools;
+			delete[] tmp_indices;
+			cudaFree(d_bools);
+			cudaFree(d_indices);
+			cudaFree(d_idata);
+            cudaFree(d_odata);
+
+
+
+            return returnVal;
         }
     }
 }
