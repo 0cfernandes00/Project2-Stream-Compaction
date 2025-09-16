@@ -34,20 +34,33 @@ Stream Compaction with scan
 
 ### Naive
 Pseudocode from [GPU Gems 3 Chapter 39 (Section 39.2.1)](https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda)
+
 <img width="552" height="164" alt="image" src="https://github.com/user-attachments/assets/ff3d5de7-79a9-44ac-ab81-98b86c4155b3" />
 
 Performance
-The primary hit to performance for the naive implementation could be 
+The primary hit to performance for the naive implementation could be the multiple accesses to global memory as well as the swapping needed to prevent race conditions.
 
 
 
 ### Work Efficient
+The Work Efficient Compaction utilized an parallel reduction up-sweep kernel and a down-sweep kernel as part of the sum, provided again from the book.
+Upsweep
+<img width="662" height="192" alt="image" src="https://github.com/user-attachments/assets/a36a5b00-4338-4bbc-86a8-a4550b21b0fc" />
+Downsweep
+<img width="907" height="204" alt="image" src="https://github.com/user-attachments/assets/55a89ece-79a0-40a6-b7fa-a742e0848669" />
+
+I had originally expected this to be the fastest implementation.
+
+
+The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm. I had originally implemented this algorithm using the pseudocode from the book and slides. However combining the upsweep and downsweep kernels into a single kernel (as well as removing the memory copy I was using in my approach), proved to be a benefit in reducing the amount of time.
 ![](img/workeff_scan_compute.png)
 
 ### Thrust
+This was simply a call to the Thrust library to compare against our other implementations. The compute report suggested that the kernel thrust uses has high register usage and low occupancy requiring more hardware resources for a single thread.
+![](img/thrust_compute.png)
 
 Unlike the other implementations, thrust seems to be using the cudaStreamSynchronize which is slowing the runtime. On average, the other implementations seem to be allocating less memory than the thrust implementation. For thrust the average runtime for the cudaMalloc API call is 34.4 microseconds, and for the other implementations the average is 29.93 microseconds.
-![](img/thrust_compute.png)
+
 
 All implementations except for thrust
 <img width="1062" height="211" alt="Screenshot 2025-09-15 225852" src="https://github.com/user-attachments/assets/86d45f3b-9953-4124-9617-3003d034e566" />
