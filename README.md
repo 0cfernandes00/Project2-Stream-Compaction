@@ -16,8 +16,8 @@ Features
 - Thrust Scan implementation
   
 The overarching goals for this project were to
-1) understand and implement Stream Compaction on the GPU
-2) practice converting algorithms to be parallel 
+1) Understand and implement Stream Compaction on the GPU
+2) Practice converting algorithms to be parallel 
 
 This implementation of stream compaction is for removing zeroes from an array of ints but this algorithm will be useful for removing unhelpful rays for a path tracer.
 
@@ -35,8 +35,6 @@ Stream Compaction with scan
 ### Naive
 Pseudocode from [GPU Gems 3 Chapter 39 (Section 39.2.1)](https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda)
 
-<img width="552" height="164" alt="image" src="https://github.com/user-attachments/assets/ff3d5de7-79a9-44ac-ab81-98b86c4155b3" />
-
 Performance
 The primary hit to performance for the naive implementation could be the multiple accesses to global memory as well as the swapping needed to prevent race conditions.
 
@@ -44,10 +42,6 @@ The primary hit to performance for the naive implementation could be the multipl
 
 ### Work Efficient
 The Work Efficient Compaction utilized an parallel reduction up-sweep kernel and a down-sweep kernel as part of the sum, provided again from the book.
-Upsweep
-<img width="662" height="192" alt="image" src="https://github.com/user-attachments/assets/a36a5b00-4338-4bbc-86a8-a4550b21b0fc" />
-Downsweep
-<img width="907" height="204" alt="image" src="https://github.com/user-attachments/assets/55a89ece-79a0-40a6-b7fa-a742e0848669" />
 
 I had originally expected this to be the fastest implementation.
 
