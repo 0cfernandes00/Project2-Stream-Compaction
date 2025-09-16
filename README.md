@@ -32,9 +32,9 @@ Can you find the performance bottlenecks? Is it memory I/O? Computation? Is it d
 This section implemented an Exclusive Prefix Sum (Scan), a Stream Compaction without scan, and finally built up to a Stream Compaction with scan.
 
 Stream Compaction with scan
-    1) Map the input into a bools array of 0s and 1s
-    2) Perform a prefix sum of the input array into the bool array
-    3) The resulting scan (from step 2) will tell which index to scatter the input array to
+1) Map the input into a bools array of 0s and 1s
+2) Perform a prefix sum of the input array into the bool array
+3) The resulting scan (from step 2) will tell which index to scatter the input array to
 
 
 ### Naive
@@ -70,8 +70,7 @@ Thrust only
 
 
 ### Final Output
-\\\
-
+```
 ****************
 ** SCAN TESTS **
 ****************
@@ -124,5 +123,4 @@ Thrust only
 ==== work-efficient compact, non-power-of-two ====
    elapsed time: 0.009216ms    (CUDA Measured)
     passed
-\\\
-
+```
