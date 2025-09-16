@@ -37,7 +37,7 @@ Stream Compaction with scan
 3) The resulting scan (from step 2) will tell which index to scatter the input array to
 
 The primary performance hit for this implementation was Memory I/O, multiple reads and writes were most impactful as well as multiple passes over the data.
-Smaller arrays size made this implementation look fast since there was little computation overhead compared to their parallel counterparts.
+Smaller array sizes made this implementation look fast since there was little computation overhead compared to their parallel counterparts.
 
 ### Naive
 Pseudocode from [GPU Gems 3 Chapter 39 (Section 39.2.1)](https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda)
@@ -50,7 +50,7 @@ The Work Efficient Compaction utilized a parallel reduction up-sweep kernel and 
 
 I tried a few different methods for optimization. I originally implemented it according to the book and lecture slides keeping the kernels seperate. I also tried combining the two operations into a single kernel to reduce the time going to the memory copy I currently do before performing the downsweep. The preformance change that ended up making a difference was to reduce the number of blocks that are launched based on the number of threads needed for the current iteration of the loop.
 
-The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm. I had originally implemented this algorithm using the pseudocode from the book and slides. However combining the upsweep and downsweep kernels into a single kernel (as well as removing the memory copy I was using in my approach), proved to be a benefit in reducing the amount of time.
+The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm.
 ![](img/workeff_scan_compute.png)
 
 ### Thrust
