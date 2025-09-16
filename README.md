@@ -7,9 +7,7 @@ CUDA Stream Compaction
   * [LinkedIn](https://www.linkedin.com/in/caroline-fernandes-0-/), [personal website](https://0cfernandes00.wixsite.com/visualfx)
 * Tested on: Windows 11, i9-14900HX @ 2.20GHz, Nvidia GeForce RTX 4070
 
-### Project Intro
-
-Features & Sections
+### Features & Sections
 - CPU Scan and Stream Compaction
 - Naive GPU Scan
 - Work Efficient Scan and Compaction
@@ -26,8 +24,6 @@ This implementation of stream compaction is for removing zeroes from an array of
 In this process, I first implemented these algorithms on the CPU including Scan(Prefix Sum) and built up to a naive, work efficient, and thrust implementation of stream compaction.
 I also optimized my work efficient scan bringing the time on a non-power-of-2 array from 0.2 ms to 0.02ms
 
-Can you find the performance bottlenecks? Is it memory I/O? Computation? Is it different for each implementation?
-
 ### CPU
 This section implemented an Exclusive Prefix Sum (Scan), a Stream Compaction without scan, and finally built up to a Stream Compaction with scan.
 
@@ -36,6 +32,8 @@ Stream Compaction with scan
 2) Perform a prefix sum of the input array into the bool array
 3) The resulting scan (from step 2) will tell which index to scatter the input array to
 
+The primary performance hit for this implementation was Memory I/O, multiple reads and writes were most impactful as well as multiple passes over the data.
+Smaller arrays size made this implementation look fast since there was little computation overhead compared to their parallel counterparts.
 
 ### Naive
 Pseudocode from [GPU Gems 3 Chapter 39 (Section 39.2.1)](https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda)
