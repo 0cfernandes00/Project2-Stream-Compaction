@@ -7,8 +7,9 @@ CUDA Stream Compaction
   * [LinkedIn](https://www.linkedin.com/in/caroline-fernandes-0-/), [personal website](https://0cfernandes00.wixsite.com/visualfx)
 * Tested on: Windows 11, i9-14900HX @ 2.20GHz, Nvidia GeForce RTX 4070
 
+
 ### Features & Sections
-- CPU Scan and Stream Compaction
+- [CPU Scan and Stream Compaction](#cpu-scan)
 - Naive GPU Scan
 - Work Efficient Scan and Compaction
 - Thrust Scan
@@ -29,6 +30,7 @@ This implementation of stream compaction is for removing zeroes from an array of
 In this process, I first implemented these algorithms on the CPU including Scan(Prefix Sum) and built up to a naive, work efficient, and the thrust implementation of stream compaction.
 I also optimized my work efficient scan bringing the time on a power-of-2 array from 0.23 ms to 0.08ms for an array size of 2 to the power of 8.
 
+#Cpu Scan
 ### CPU
 This section implemented an Exclusive Prefix Sum (Scan), a Stream Compaction without scan, and finally built up to a Stream Compaction with scan.
 
@@ -51,7 +53,7 @@ The Work Efficient Compaction utilized a parallel reduction up-sweep kernel and 
 
 I tried a few different methods for optimization. I originally implemented it according to the book and lecture slides keeping the kernels seperate. I also tried combining the two operations into a single kernel to reduce the time going to the memory copy I currently do before performing the downsweep. The performance change that ended up making a difference was to reduce the number of blocks that are launched based on the number of threads needed for the current iteration of the loop, as well as using the threads needed for launch as a verification check on larger array sizes.
 
-The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm.
+The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm. The memory overhead and number of writes and reads seemed similar to earlier implementations. The computation and branching considerations for scaling block sizes on kernel launch seemed to have the greatest impact on performance.
 ![](img/workeff_scan_compute.png)
 
 ### Thrust
@@ -67,62 +69,61 @@ Thrust only
 <img width="1073" height="155" alt="thrust_events" src="https://github.com/user-attachments/assets/3a834ca3-0f78-4976-9f9a-edb974cb2ea5" />
 
 ### Optimization Analysis
-
+I was able to use Nsight Systems as well as Nsight Compute to get a better look at the kernels and api calls. One thing it called out was that the grid size was too small and unoptimal for performance. This message was not super suprising since I was running smaller arrays.
 <img width="1592" height="270" alt="image" src="https://github.com/user-attachments/assets/b241883c-dc2b-4ae3-9b8f-004a867289f2" />
 
 
 ### Final Output (for Size = 2 ^ 8)
-```
 ****************
 ** SCAN TESTS **
 ****************
-    [  10  43  13  38   6   1  25  30   0  26   9  46  40 ...  19   0 ]
+    [  44  31  15  33  34  41  21  45  49   9  38  49  30 ...  19   0 ]
 ==== cpu scan, power-of-two ====
-   elapsed time: 0.0006ms    (std::chrono Measured)
-    [   0  10  53  66 104 110 111 136 166 166 192 201 247 ... 6452 6471 ]
+   elapsed time: 11.6663ms    (std::chrono Measured)
+    [   0  44  75  90 123 157 198 219 264 313 322 360 409 ... 102732619 102732638 ]
 ==== cpu scan, non-power-of-two ====
-   elapsed time: 0.0008ms    (std::chrono Measured)
-    [   0  10  53  66 104 110 111 136 166 166 192 201 247 ... 6385 6400 ]
+   elapsed time: 17.8068ms    (std::chrono Measured)
+    [   0  44  75  90 123 157 198 219 264 313 322 360 409 ... 102732514 102732560 ]
     passed
 ==== naive scan, power-of-two ====
-   elapsed time: 0.446464ms    (CUDA Measured)
+   elapsed time: 2.49738ms    (CUDA Measured)
     passed
 ==== naive scan, non-power-of-two ====
-   elapsed time: 0.105472ms    (CUDA Measured)
+   elapsed time: 2.09478ms    (CUDA Measured)
     passed
 ==== work-efficient scan, power-of-two ====
-   elapsed time: 0.19968ms    (CUDA Measured)
+   elapsed time: 1.50678ms    (CUDA Measured)
     passed
 ==== work-efficient scan, non-power-of-two ====
-   elapsed time: 0.137216ms    (CUDA Measured)
+   elapsed time: 1.06701ms    (CUDA Measured)
     passed
 ==== thrust scan, power-of-two ====
-   elapsed time: 2.11613ms    (CUDA Measured)
+   elapsed time: 9.5096ms    (CUDA Measured)
     passed
 ==== thrust scan, non-power-of-two ====
-   elapsed time: 0.871744ms    (CUDA Measured)
+   elapsed time: 7.08781ms    (CUDA Measured)
     passed
 
 *****************************
 ** STREAM COMPACTION TESTS **
 *****************************
-    [   2   3   1   0   0   1   3   2   0   0   3   2   0 ...   1   0 ]
+    [   2   3   1   3   2   2   3   2   2   3   0   1   3 ...   3   0 ]
 ==== cpu compact without scan, power-of-two ====
-   elapsed time: 0.0009ms    (std::chrono Measured)
-    [   2   3   1   1   3   2   3   2   3   1   3   1   1 ...   2   1 ]
+   elapsed time: 31.6045ms    (std::chrono Measured)
+    [   2   3   1   3   2   2   3   2   2   3   1   3   1 ...   2   3 ]
     passed
 ==== cpu compact without scan, non-power-of-two ====
-   elapsed time: 0.0006ms    (std::chrono Measured)
-    [   2   3   1   1   3   2   3   2   3   1   3   1   1 ...   1   2 ]
+   elapsed time: 42.2566ms    (std::chrono Measured)
+    [   2   3   1   3   2   2   3   2   2   3   1   3   1 ...   2   2 ]
     passed
 ==== cpu compact with scan ====
-   elapsed time: 0.0036ms    (std::chrono Measured)
-    [   2   3   1   1   3   2   3   2   3   1   3   1   1 ...   2   1 ]
+   elapsed time: 82.0855ms    (std::chrono Measured)
+    [   2   3   1   3   2   2   3   2   2   3   1   3   1 ...   2   3 ]
     passed
 ==== work-efficient compact, power-of-two ====
-   elapsed time: 0.175104ms    (CUDA Measured)
+   elapsed time: 0.819008ms    (CUDA Measured)
     passed
 ==== work-efficient compact, non-power-of-two ====
-   elapsed time: 0.182464ms    (CUDA Measured)
+   elapsed time: 0.769312ms    (CUDA Measured)
     passed
 ```
