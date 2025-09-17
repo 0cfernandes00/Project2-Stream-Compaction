@@ -11,11 +11,10 @@ CUDA Stream Compaction
 ### Features & Sections
 - [CPU Scan and Stream Compaction](https://github.com/0cfernandes00/Project2-Stream-Compaction/blob/main/README.md#cpu)
 - [Naive GPU Scan](https://github.com/0cfernandes00/Project2-Stream-Compaction/blob/main/README.md#naive)
-- Work Efficient Scan and Compaction
-- Thrust Scan
-- Optimization
-     - Work Efficient Scan Speedup
-- Final Output
+- [Work Efficient Scan and Compaction](https://github.com/0cfernandes00/Project2-Stream-Compaction/blob/main/README.md#work-efficient)
+- [Thrust Scan](https://github.com/0cfernandes00/Project2-Stream-Compaction/blob/main/README.md#thrust)
+- [Optimization Profiling](https://github.com/0cfernandes00/Project2-Stream-Compaction/blob/main/README.md#optimization-analysis)
+- [Final Output](https://github.com/0cfernandes00/Project2-Stream-Compaction/blob/main/README.md#final-output-for-size--2--8)
 
 ![](img/diagram_two.png)
 
@@ -74,6 +73,7 @@ I was able to use Nsight Systems as well as Nsight Compute to get a better look 
 
 
 ### Final Output (for Size = 2 ^ 8)
+```
 ****************
 ** SCAN TESTS **
 ****************
@@ -122,6 +122,7 @@ I was able to use Nsight Systems as well as Nsight Compute to get a better look 
     passed
 ==== work-efficient compact, power-of-two ====
    elapsed time: 0.819008ms    (CUDA Measured)
+```
     passed
 ==== work-efficient compact, non-power-of-two ====
    elapsed time: 0.769312ms    (CUDA Measured)
