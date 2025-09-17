@@ -13,16 +13,21 @@ CUDA Stream Compaction
 - Work Efficient Scan and Compaction
 - Thrust Scan
 - Optimization
+     - Work Efficient Scan Speedup
 - Final Output
+
+![](img/diagram_two.png)
+
+![](img/diagram_one.png)
   
 The overarching goals for this project were to
 1) Understand and implement Stream Compaction on the GPU
-2) Practice converting algorithms to be parallel 
+2) Practice converting algorithms to be parallel
 
 This implementation of stream compaction is for removing zeroes from an array of ints but this algorithm will be useful for removing unhelpful rays for a path tracer.
 
-In this process, I first implemented these algorithms on the CPU including Scan(Prefix Sum) and built up to a naive, work efficient, and thrust implementation of stream compaction.
-I also optimized my work efficient scan bringing the time on a non-power-of-2 array from 0.2 ms to 0.02ms
+In this process, I first implemented these algorithms on the CPU including Scan(Prefix Sum) and built up to a naive, work efficient, and the thrust implementation of stream compaction.
+I also optimized my work efficient scan bringing the time on a power-of-2 array from 0.23 ms to 0.08ms for an array size of 2 to the power of 8.
 
 ### CPU
 This section implemented an Exclusive Prefix Sum (Scan), a Stream Compaction without scan, and finally built up to a Stream Compaction with scan.
@@ -33,7 +38,7 @@ Stream Compaction with scan
 3) The resulting scan (from step 2) will tell which index to scatter the input array to
 
 The primary performance hit for this implementation was Memory I/O, multiple reads and writes were most impactful as well as multiple passes over the data.
-Smaller arrays size made this implementation look fast since there was little computation overhead compared to their parallel counterparts.
+Smaller array sizes made this implementation look fast since there was little computation overhead compared to their parallel counterparts.
 
 ### Naive
 Pseudocode from [GPU Gems 3 Chapter 39 (Section 39.2.1)](https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda)
@@ -42,12 +47,11 @@ The primary hit to performance for the naive implementation could be the multipl
 
 
 ### Work Efficient
-The Work Efficient Compaction utilized an parallel reduction up-sweep kernel and a down-sweep kernel as part of the sum, provided again from the book.
+The Work Efficient Compaction utilized a parallel reduction up-sweep kernel and a down-sweep kernel as part of the sum, provided again from the book.
 
-I had originally expected this to be the fastest implementation.
+I tried a few different methods for optimization. I originally implemented it according to the book and lecture slides keeping the kernels seperate. I also tried combining the two operations into a single kernel to reduce the time going to the memory copy I currently do before performing the downsweep. The performance change that ended up making a difference was to reduce the number of blocks that are launched based on the number of threads needed for the current iteration of the loop, as well as using the threads needed for launch as a verification check on larger array sizes.
 
-
-The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm. I had originally implemented this algorithm using the pseudocode from the book and slides. However combining the upsweep and downsweep kernels into a single kernel (as well as removing the memory copy I was using in my approach), proved to be a benefit in reducing the amount of time.
+The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm.
 ![](img/workeff_scan_compute.png)
 
 ### Thrust
@@ -67,58 +71,58 @@ Thrust only
 <img width="1592" height="270" alt="image" src="https://github.com/user-attachments/assets/b241883c-dc2b-4ae3-9b8f-004a867289f2" />
 
 
-### Final Output
+### Final Output (for Size = 2 ^ 8)
 ```
 ****************
 ** SCAN TESTS **
 ****************
-    [  35  47  37   8  44  39  23  37   0   6  11  25  35 ...  47   0 ]
+    [  10  43  13  38   6   1  25  30   0  26   9  46  40 ...  19   0 ]
 ==== cpu scan, power-of-two ====
-   elapsed time: 0.0009ms    (std::chrono Measured)
-    [   0  35  82 119 127 171 210 233 270 270 276 287 312 ... 6365 6412 ]
-==== cpu scan, non-power-of-two ====
    elapsed time: 0.0006ms    (std::chrono Measured)
-    [   0  35  82 119 127 171 210 233 270 270 276 287 312 ... 6304 6341 ]
+    [   0  10  53  66 104 110 111 136 166 166 192 201 247 ... 6452 6471 ]
+==== cpu scan, non-power-of-two ====
+   elapsed time: 0.0008ms    (std::chrono Measured)
+    [   0  10  53  66 104 110 111 136 166 166 192 201 247 ... 6385 6400 ]
     passed
 ==== naive scan, power-of-two ====
-   elapsed time: 0.354304ms    (CUDA Measured)
+   elapsed time: 0.446464ms    (CUDA Measured)
     passed
 ==== naive scan, non-power-of-two ====
-   elapsed time: 0.027648ms    (CUDA Measured)
+   elapsed time: 0.105472ms    (CUDA Measured)
     passed
 ==== work-efficient scan, power-of-two ====
-   elapsed time: 0.082944ms    (CUDA Measured)
+   elapsed time: 0.19968ms    (CUDA Measured)
     passed
 ==== work-efficient scan, non-power-of-two ====
-   elapsed time: 0.040256ms    (CUDA Measured)
+   elapsed time: 0.137216ms    (CUDA Measured)
     passed
 ==== thrust scan, power-of-two ====
-   elapsed time: 2.22134ms    (CUDA Measured)
+   elapsed time: 2.11613ms    (CUDA Measured)
     passed
 ==== thrust scan, non-power-of-two ====
-   elapsed time: 0.746208ms    (CUDA Measured)
+   elapsed time: 0.871744ms    (CUDA Measured)
     passed
 
 *****************************
 ** STREAM COMPACTION TESTS **
 *****************************
-    [   1   3   1   0   0   1   3   3   0   2   3   3   1 ...   3   0 ]
+    [   2   3   1   0   0   1   3   2   0   0   3   2   0 ...   1   0 ]
 ==== cpu compact without scan, power-of-two ====
-   elapsed time: 0.001ms    (std::chrono Measured)
-    [   1   3   1   1   3   3   2   3   3   1   3   1   1 ...   1   3 ]
+   elapsed time: 0.0009ms    (std::chrono Measured)
+    [   2   3   1   1   3   2   3   2   3   1   3   1   1 ...   2   1 ]
     passed
 ==== cpu compact without scan, non-power-of-two ====
-   elapsed time: 0.001ms    (std::chrono Measured)
-    [   1   3   1   1   3   3   2   3   3   1   3   1   1 ...   3   1 ]
+   elapsed time: 0.0006ms    (std::chrono Measured)
+    [   2   3   1   1   3   2   3   2   3   1   3   1   1 ...   1   2 ]
     passed
 ==== cpu compact with scan ====
-   elapsed time: 0.0076ms    (std::chrono Measured)
-    [   1   3   1   1   3   3   2   3   3   1   3   1   1 ...   1   3 ]
+   elapsed time: 0.0036ms    (std::chrono Measured)
+    [   2   3   1   1   3   2   3   2   3   1   3   1   1 ...   2   1 ]
     passed
 ==== work-efficient compact, power-of-two ====
-   elapsed time: 0.011264ms    (CUDA Measured)
+   elapsed time: 0.175104ms    (CUDA Measured)
     passed
 ==== work-efficient compact, non-power-of-two ====
-   elapsed time: 0.009216ms    (CUDA Measured)
+   elapsed time: 0.182464ms    (CUDA Measured)
     passed
 ```
