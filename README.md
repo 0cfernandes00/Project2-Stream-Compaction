@@ -22,9 +22,9 @@ CUDA Stream Compaction
   
 The overarching goals for this project were to
 1) Understand and implement Stream Compaction on the GPU
-2) Practice converting algorithms to be parallel
+2) Practice parallelizing algorithms
 
-This implementation of stream compaction is for removing zeroes from an array of ints but this algorithm will be useful for removing unhelpful rays for a path tracer.
+This implementation of stream compaction is for removing zeroes from an array of ints, but this algorithm will be useful for future uses in removing unhelpful rays from a path tracer.
 
 In this process, I first implemented these algorithms on the CPU including Scan(Prefix Sum) and built up to a naive, work efficient, and the thrust implementation of stream compaction.
 I also optimized my work efficient scan bringing the time on a power-of-2 array from 0.23 ms to 0.08ms for an array size of 2 to the power of 8.
@@ -44,13 +44,13 @@ Smaller array sizes made this implementation look fast since there was little co
 ### Naive
 Pseudocode from [GPU Gems 3 Chapter 39 (Section 39.2.1)](https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda)
 
-The primary hit to performance for the naive implementation could be the multiple accesses to global memory, additionally this implementation required to buffers to swap between in order to prevent race conditions since this algorithm was not intended to be done in-place.
+The primary hit to performance for the naive implementation could be the multiple accesses to global memory, additionally this implementation required buffers to swap between in order to prevent race conditions since this algorithm was not intended to be done in-place.
 
 
 ### Work Efficient
 The Work Efficient Compaction utilized a parallel reduction up-sweep kernel and a down-sweep kernel as part of the sum, provided again from the book.
 
-I tried a few different methods for optimization. I originally implemented it according to the book and lecture slides keeping the kernels seperate. I also tried combining the two operations into a single kernel to reduce the time going to the memory copy I currently do before performing the downsweep. The performance change that ended up making a difference was to reduce the number of blocks that are launched based on the number of threads needed for the current iteration of the loop, as well as using the threads needed for launch as a verification check on larger array sizes.
+I tried a few different methods for optimization. I originally implemented it according to the book and lecture slides keeping the kernels seperate. I also tried combining the two operations into a single kernel to reduce the time cost to the memory copy I currently do before performing the downsweep. The performance change that ended up making a difference was to reduce the number of blocks that are launched based on the number of threads needed for the current iteration of the loop, as well as using the threads needed for launch as a verification check on larger array sizes.
 
 The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm. The memory overhead and number of writes and reads seemed similar to earlier implementations. The computation and branching considerations for scaling block sizes on kernel launch seemed to have the greatest impact on performance.
 ![](img/workeff_scan_compute.png)
@@ -122,7 +122,6 @@ I was able to use Nsight Systems as well as Nsight Compute to get a better look 
     passed
 ==== work-efficient compact, power-of-two ====
    elapsed time: 0.819008ms    (CUDA Measured)
-```
     passed
 ==== work-efficient compact, non-power-of-two ====
    elapsed time: 0.769312ms    (CUDA Measured)
