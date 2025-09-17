@@ -13,6 +13,7 @@ CUDA Stream Compaction
 - Work Efficient Scan and Compaction
 - Thrust Scan
 - Optimization
+     - Work Efficient Scan Speedup
 - Final Output
 
 ![](img/diagram_two.png)
@@ -48,7 +49,7 @@ The primary hit to performance for the naive implementation could be the multipl
 ### Work Efficient
 The Work Efficient Compaction utilized a parallel reduction up-sweep kernel and a down-sweep kernel as part of the sum, provided again from the book.
 
-I tried a few different methods for optimization. I originally implemented it according to the book and lecture slides keeping the kernels seperate. I also tried combining the two operations into a single kernel to reduce the time going to the memory copy I currently do before performing the downsweep. The preformance change that ended up making a difference was to reduce the number of blocks that are launched based on the number of threads needed for the current iteration of the loop.
+I tried a few different methods for optimization. I originally implemented it according to the book and lecture slides keeping the kernels seperate. I also tried combining the two operations into a single kernel to reduce the time going to the memory copy I currently do before performing the downsweep. The performance change that ended up making a difference was to reduce the number of blocks that are launched based on the number of threads needed for the current iteration of the loop, as well as using the threads needed for launch as a verification check on larger array sizes.
 
 The NSight Compute report seemed to suggest that the bottleneck was largely in computation usage for this algorithm.
 ![](img/workeff_scan_compute.png)
