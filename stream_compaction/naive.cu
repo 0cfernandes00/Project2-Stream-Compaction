@@ -20,12 +20,6 @@ namespace StreamCompaction {
 
             if (index >= n) return;
 			int val = 1 << (d-1);
-            /*
-            if (index == 0) {
-                odata[0] = idata[0];
-                return;
-			}
-            */
 
             if (index >= val ) {
                 odata[index] = idata[index] + idata[index - val];

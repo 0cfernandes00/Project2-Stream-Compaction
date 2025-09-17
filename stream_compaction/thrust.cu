@@ -30,18 +30,6 @@ namespace StreamCompaction {
             thrust::exclusive_scan(dv.begin(), dv.end(), dv.begin());
             thrust::copy(dv.begin(), dv.end(), odata);
             
-            /*
-            const size_t chunk_size = 1024 * 1024; // Adjust based on available memory
-            thrust::device_vector<int> dv_chunk(chunk_size);
-
-            for (size_t i = 0; i < n; i += chunk_size) {
-                size_t current_chunk = std::min(chunk_size, n - i);
-                dv_chunk.resize(current_chunk);
-                thrust::copy(idata + i, idata + i + current_chunk, dv_chunk.begin());
-                thrust::exclusive_scan(dv_chunk.begin(), dv_chunk.end(), dv_chunk.begin());
-                thrust::copy(dv_chunk.begin(), dv_chunk.end(), odata + i);
-            }
-            */
 
             timer().endGpuTimer();
 
