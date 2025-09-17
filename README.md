@@ -9,8 +9,8 @@ CUDA Stream Compaction
 
 
 ### Features & Sections
-- [CPU Scan and Stream Compaction](#cpu-scan)
-- Naive GPU Scan
+- [CPU Scan and Stream Compaction](https://github.com/0cfernandes00/Project2-Stream-Compaction/blob/main/README.md#cpu)
+- [Naive GPU Scan](https://github.com/0cfernandes00/Project2-Stream-Compaction/blob/main/README.md#naive)
 - Work Efficient Scan and Compaction
 - Thrust Scan
 - Optimization
@@ -30,7 +30,7 @@ This implementation of stream compaction is for removing zeroes from an array of
 In this process, I first implemented these algorithms on the CPU including Scan(Prefix Sum) and built up to a naive, work efficient, and the thrust implementation of stream compaction.
 I also optimized my work efficient scan bringing the time on a power-of-2 array from 0.23 ms to 0.08ms for an array size of 2 to the power of 8.
 
-#Cpu Scan
+
 ### CPU
 This section implemented an Exclusive Prefix Sum (Scan), a Stream Compaction without scan, and finally built up to a Stream Compaction with scan.
 
